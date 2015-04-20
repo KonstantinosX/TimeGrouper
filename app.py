@@ -99,7 +99,7 @@ class SMatrix(Resource):
 
 # The endpoints to the API. To access it http://127.0.0.1:5000/<endpoint>
 api.add_resource(SMatrix, '/getSimMatrix', '/getSimMatrix/<app_filter>')
-api.add_resource(PatchTS, '/getPatches')
+api.add_resource(PatchTS, '/getPatches', '/getPatches/<patch_id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
