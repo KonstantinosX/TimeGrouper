@@ -12,6 +12,7 @@ based on sklearn package
 
 import sklearn.metrics.pairwise as skmpw
 import sklearn.cluster as skc
+import sklearn.decomposition as skd
 from enum import Enum
 import csv
 import numpy as np
@@ -154,27 +155,40 @@ class TSCluster:
             self.slctData = [ts for ts in self.slctData if ts.expFlag in self.slctExpF]
         print 'selected data:', len(self.slctData)
 
-    def getSimMat(self, type = 'euclidean', ftr_type = 'data', orderFlag = True):
+    def getSimMat(self, type = 'euclidean', ftr_type = 'data', orderFlag = True , pca_dim=20):
         if ftr_type == 'ftr':
+            #use input features
             self.slctData = [ts for ts in self.slctData if ((ts.ftr is not None) and (len(ts.ftr) > 0))]
             dataMat = [ts.ftr for ts in self.slctData]
         elif ftr_type == 'data':
+            #use input data
             dataMat = [ts.val for ts in self.slctData]
+        else:
+            print 'unknown ftr_type for ftr_type:', ftr_type
 
         if type  == 'euclidean':
             self.simMat = skmpw.euclidean_distances(dataMat)
+        elif type == 'pca_euc':
+            pca = skd.PCA(n_components=pca_dim)
+            dataMat = pca.fit_transform(dataMat)
+            self.simMat = skmpw.euclidean_distances(dataMat)
+        elif type == 'nmf_euc':
+            nmf = skd.PCA(n_components=pca_dim)
+            dataMat = nmf.fit_transform(dataMat)
+            self.simMat = skmpw.euclidean_distances(dataMat)
+        else:
+            print 'unknown type for similarity matrix: ', type
             #print self.simMat
-        #rearrange the order of data in simMat
-        #rearrange the order of data in simMat
-        self.patchOrdering = [ts.ptchNm for ts in self.slctData] #record new ordering
+        self.patchOrdering = [ts.ptchNm for ts in self.slctData] #record ordering
         if orderFlag:
             link = spc.hierarchy.linkage(self.simMat)
             dend = spc.hierarchy.dendrogram(link, no_plot=True)
             order = dend['leaves']
             self.slctData = [self.slctData[i] for i in order] #rearrange order
             self.patchOrdering = [ts.ptchNm for ts in self.slctData] #record new ordering
-            dataMat = [ts.val for ts in self.slctData]
-            self.simMat = skmpw.euclidean_distances(dataMat)
+            self.simMat = [self.simMat[i] for i in order]
+            for i in xrange(len(self.simMat)):
+                self.simMat[i] = [self.simMat[i][j] for j in order]
 
     def getCluster(self, type = 'kmeans', cNum = 50):
         dataMat = [ts.val for ts in self.slctData]
@@ -224,7 +238,7 @@ class TSCluster:
 if __name__ == '__main__':
     # test demo
     # fileFolder = r'D:\UMD\class\2015Spring\cmsc734\termProject'
-    fileFolder = '/Users/kostasx/Desktop/REST-tutorial-master/data'
+    fileFolder = '/Users/kostasx/Desktop/TimeGrouper/data'
     tsc = TSCluster()
     tsc.loadTS(fileFolder+'/hazard_alg_TP.input')
     tsc.loadAttr(fileFolder+'/stat.csv')

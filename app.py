@@ -36,7 +36,7 @@ def loadData(app_filter=['all']):
     tsc.loadFtr(dataPath + os.path.abspath("/data/ziyun_ftr.input"))
     tsc.setAppFilter(app_filter)
     tsc.slctTSData()
-    tsc.getSimMat(ftr_type = 'ftr', orderFlag = True)
+    tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = False)
     db.set('currData',tsc)
     currData = tsc
     return tsc
