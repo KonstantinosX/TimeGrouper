@@ -21,6 +21,7 @@ import scipy.cluster as spc
 from matplotlib import pyplot as plt
 from blaze.expr.math import floor
 import math
+import json
 
 class PatchTS:
     'this class describe the patching time series'
