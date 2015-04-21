@@ -3,9 +3,9 @@ Python code for CMSC 734 term project,
 based on sklearn package
 
 1. load time series data
-2. create similarity matrix  
+2. create similarity matrix
 3. clustering
-4. rearrange index in similarity matrix based on clustering results 
+4. rearrange index in similarity matrix based on clustering results
 
 @author: Zheng Xu, xuzhustc@gmail.com, 2015/4/8
 '''
@@ -19,7 +19,7 @@ import numpy as np
 import scipy.spatial.distance as spd
 import scipy.cluster as spc
 from matplotlib import pyplot as plt
-from blaze.expr.math import floor
+from math import floor
 import math
 import json
 
@@ -34,29 +34,29 @@ class PatchTS:
         self.expFlag = None
         self.val = []
         self.ftr = []
-    
+
     def setPatchNm(self, nm):
         self.ptchNm = nm
-        
+
     def setVal(self, val):
         self.val = list(val)
-        
+
     def setAppNm(self, nm):
         self.appNm = nm
-    
+
     def setUpM(self, um):
         self.upM = um
-    
+
     def setExpF(self, ef):
         self.expFlag = ef
-    
+
     def setFtr(self, ftr):
         self.ftr = list(ftr)
-        
-        
-        
+
+
+
 class TSCluster:
-    ' this class is used to caculate the similarity matrix and do clustering for time series' 
+    ' this class is used to caculate the similarity matrix and do clustering for time series'
     def __init__(self):
         #members related to time series data
         self.tsNum = 0
@@ -74,7 +74,7 @@ class TSCluster:
         self.cluter = None
         self.simMatSmm = None
         self.patchOrdering = None
-        
+
     def loadTS(self, tsFile):
         #load time series
         with open(tsFile, 'r') as fid:
@@ -99,7 +99,7 @@ class TSCluster:
                 self.tsData.append(ts)
                 self.ptchnm2idx[ts.ptchNm] = i
         if len(self.tsData) == self.tsNum:
-            print 'loaded time series:', self.tsNum    
+            print 'loaded time series:', self.tsNum
 
     def loadAttr(self, attFile):
         #load attributes such as update mechanism, application name
@@ -116,8 +116,8 @@ class TSCluster:
                 ts.setAppNm(row[1])
                 ts.setUpM(row[2])
                 ts.setExpF(bool(row[6]))
-            print 'patch time series with attribute:', ri 
-    
+            print 'patch time series with attribute:', ri
+
     def loadFtr(self, ftrFile):
         #load user input ftr for time series
         with open(ftrFile, 'r') as fid:
@@ -139,14 +139,14 @@ class TSCluster:
                     ts.setFtr([float(x) for x in parts2])
                 else:
                     print 'feature dim: ', ftrDim, 'vs.', len(parts2)
-    
+
     def setAppFilter(self, app):
         self.slctApp = set(app)
     def setUMFilter(self, um):
         self.slctUM = set(um)
     def setExpFilter(self, exp):
         self.slctExpF = set(exp)
-    
+
     def slctTSData(self):
         self.slctData = self.tsData
         #filter by application
@@ -157,7 +157,7 @@ class TSCluster:
         if not 'all' in self.slctExpF:
             self.slctData = [ts for ts in self.slctData if ts.expFlag in self.slctExpF]
         print 'selected data:', len(self.slctData)
-        
+
     def getSimMat(self, type = 'euclidean', ftr_type = 'data', orderFlag = True, pca_dim=20):
         if ftr_type == 'ftr':
             #use input features
@@ -168,7 +168,7 @@ class TSCluster:
             dataMat = [ts.val for ts in self.slctData]
         else:
             print 'unknown ftr_type for ftr_type:', ftr_type
-            
+
         if type  == 'euclidean':
             self.simMat = skmpw.euclidean_distances(dataMat)
         elif type == 'pca_euc':
@@ -181,7 +181,7 @@ class TSCluster:
             self.simMat = skmpw.euclidean_distances(dataMat)
         else:
             print 'unknown type for similarity matrix: ', type
-            
+
         #rearrange the order of data in simMat
         if orderFlag:
             link = spc.hierarchy.linkage(self.simMat)
@@ -192,7 +192,7 @@ class TSCluster:
             for i in xrange(len(self.simMat)):
                 self.simMat[i] = [self.simMat[i][j] for j in order]
         self.patchOrdering = [ts.ptchNm for ts in self.slctData] #record new ordering
-    
+
     def getSimMatSummary(self, maxSize):
         ttlSz = len(self.simMat)
         sc = 2.0
@@ -210,11 +210,11 @@ class TSCluster:
                         ttl += self.simMat[i*sc+i2][j*sc+j2]
                 simMat[i].append(ttl)
         self.simMatSmm = simMat
-             
-    
+
+
     def getCluster(self, type = 'kmeans', cNum = 50):
         dataMat = [ts.val for ts in self.slctData]
-            
+
     def drawSimMat(self):
         plt.figure()
         labels = [ts.ptchNm for ts in self.slctData]
@@ -223,7 +223,7 @@ class TSCluster:
         plt.colorbar()
         plt.ylabel('patches')
         plt.xlabel('patches')
-        
+
     def toJSON(self):
         """
         Returns a JSON of the similarity matrix and its metadata (patches and their ordering)
@@ -243,7 +243,7 @@ class TSCluster:
             rowJson = []
         jsonToRet.append(matrixJson)
         return jsonToRet
-    
+
     def drawSimMatSummary(self):
         plt.figure()
         labels = [ts.ptchNm for ts in self.slctData]
@@ -252,7 +252,7 @@ class TSCluster:
         plt.colorbar()
         plt.ylabel('patches')
         plt.xlabel('patches')
-        
+
     def writeSimMatCSV(self, lblNmFile, matFile):
         lblNm = [ts.ptchNm for ts in self.slctData]
         with open(lblNmFile, 'w') as fid:
@@ -265,18 +265,18 @@ class TSCluster:
                     fid.write(str(val))
                     fid.write(',')
                 fid.write('\n')
-    
-    
-    
-            
+
+
+
+
 if __name__ == '__main__':
-    # test demo 
-    fileFolder = r'D:\UMD\class\2015Spring\cmsc734\termProject' 
+    # test demo
+    fileFolder = r'D:\UMD\class\2015Spring\cmsc734\termProject'
     tsc = TSCluster()
     tsc.loadTS(fileFolder+'\hazard_alg_TP.input')
     tsc.loadAttr(fileFolder+'\stat.csv')
     tsc.loadFtr(fileFolder+'\ziyun_ftr.input')
-    
+
     tsc.setAppFilter(['chrome', 'firefox'])
     tsc.slctTSData()
     tsc.getSimMat(ftr_type = 'ftr', orderFlag = True)
@@ -285,8 +285,8 @@ if __name__ == '__main__':
     tsc.drawSimMatSummary()
     tsc.getSimMatSummary(50)
     tsc.drawSimMatSummary()
-    
-    
+
+
     '''
     tsc.setAppFilter(['chrome'])
 
@@ -309,7 +309,7 @@ if __name__ == '__main__':
     tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = True)
     tsc.drawSimMat()
     '''
-    
+
     #save matrix
     #tsc.writeSimMatCSV(fileFolder+'\PatchName.csv', fileFolder+'\SimMat.csv')
     plt.show()
