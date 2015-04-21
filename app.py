@@ -16,7 +16,8 @@ import os
 # Initial assignments
 app = Flask(__name__)
 api = Api(app)
-db = pickledb.load('example.db',False) #open db
+currentData = pickledb.load('currData.db',False) #open db
+db = pickledb.load('database.db',False)
 dataPath = os.path.dirname(os.path.abspath('__file__'))
 # currData = TSCluster()
 parser = reqparse.RequestParser()
@@ -29,15 +30,17 @@ def loadData(app_filter=['all']):
     Calls the clustering code which reads the data into a python object,
     and loads that python object into pickledb to be called and served to the front end. returns the read python object to be converted to JSON and served.
     """
-
-    tsc = TSCluster()
-    tsc.loadTS(dataPath + os.path.abspath("/data/hazard_alg_TP.input"))
-    tsc.loadAttr(dataPath + os.path.abspath("/data/stat.csv"))
-    tsc.loadFtr(dataPath + os.path.abspath("/data/ziyun_ftr.input"))
+    if(currentData.get('currData') == None):
+        tsc = TSCluster()
+        tsc.loadTS(dataPath + os.path.abspath("/data/hazard_alg_TP.input"))
+        tsc.loadAttr(dataPath + os.path.abspath("/data/stat.csv"))
+        tsc.loadFtr(dataPath + os.path.abspath("/data/ziyun_ftr.input"))
+        currentData.set('currData',tsc)
+    tsc = currentData.get('currData')
     tsc.setAppFilter(app_filter)
     tsc.slctTSData()
-    tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = False)
-    db.set('currData',tsc)
+    tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = True)
+    currentData.set('currData',tsc)
     currData = tsc
     return tsc
     # return tsc.toJSON()
@@ -46,7 +49,7 @@ def abort_if_patch_doesnt_exist(patch_id):
     """
     Aborts and returns an appropriate message if the patches requested don't exist
     """
-    currData = db.get('currData')
+    currData = currentData.get('currData')
     print currData.ptchnm2idx
     if patch_id not in  currData.ptchnm2idx:
         abort(404, message="Patch {} doesn't exist".format(patch_id))
@@ -61,7 +64,7 @@ class PatchTS(Resource):
         return patches[patch_id]
 
     def post(self):
-        currData = db.get('currData')
+        currData = currentData.get('currData')
         toReturn = []
         args = parser.parse_args()
         tehArgs = args['patchId']
@@ -85,9 +88,15 @@ class SMatrix(Resource):
     """
 
     def get(self,app_filter='all'):
+        matrix = db.get(app_filter)
+        if(matrix != None):
+            return matrix
         filt = []
         filt.append(app_filter)
-        return loadData(filt).toJSON()
+        simMatJSON = loadData(filt).toJSON()
+        db.set(app_filter,simMatJSON)
+        db.dump()
+        return simMatJSON
 
     def post(self):
         args = parser.parse_args()
