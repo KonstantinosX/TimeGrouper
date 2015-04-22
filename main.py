@@ -22,10 +22,11 @@ dataPath = os.path.dirname(os.path.abspath('__file__'))
 # currData = TSCluster()
 parser = reqparse.RequestParser()
 parser.add_argument('patchId', type=str, action='append')
+parser.add_argument('appName', type=str, action='append')
 parser.add_argument('filter', type=str, action='append')
 
 
-def loadData(app_filter=['all']):
+def loadData(app_filter=['all'],filters=['all']):
     """
     Calls the clustering code which reads the data into a python object,
     and loads that python object into pickledb to be called and served to the front end. returns the read python object to be converted to JSON and served.
@@ -38,7 +39,7 @@ def loadData(app_filter=['all']):
         currentData.set('currData',tsc)
     tsc = currentData.get('currData')
     tsc.setAppFilter(app_filter)
-    tsc.slctTSData()
+    tsc.slctTSData(filters)
     tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = True)
     currentData.set('currData',tsc)
     currData = tsc
@@ -100,9 +101,11 @@ class SMatrix(Resource):
 
     def post(self):
         args = parser.parse_args()
-        argz = args['filter']
+        argz = args['appName']
         print argz
-        return loadData(argz).toJSON()
+        updM = parser.parse_args()
+        filters = args['filter']
+        return loadData(argz,filters).toJSON()
         # return None
 
 
