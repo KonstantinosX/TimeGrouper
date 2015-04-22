@@ -1,3 +1,6 @@
-scipy
-numpy
-sklearn
+# This file may be used to create an environment using:
+# $ conda create --name <env> --file <this file>
+# platform: osx-64
+scipy==0.14.0
+numpy==1.8.1
+scikit-learn==0.14.1
