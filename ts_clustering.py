@@ -18,7 +18,7 @@ import csv
 import numpy as np
 import scipy.spatial.distance as spd
 import scipy.cluster as spc
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from math import floor
 import math
 import json

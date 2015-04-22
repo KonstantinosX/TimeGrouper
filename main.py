@@ -14,8 +14,8 @@ import pickledb
 import os
 
 # Initial assignments
-app = Flask(__name__)
-api = Api(app)
+main = Flask(__name__)
+api = Api(main)
 currentData = pickledb.load('currData.db',False) #open db
 db = pickledb.load('database.db',False)
 dataPath = os.path.dirname(os.path.abspath('__file__'))
@@ -111,4 +111,4 @@ api.add_resource(SMatrix, '/getSimMatrix', '/getSimMatrix/<app_filter>')
 api.add_resource(PatchTS, '/getPatches', '/getPatches/<patch_id>')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    main.run(debug=True)

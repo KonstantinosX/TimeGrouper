@@ -8,3 +8,5 @@ ts_clustering-2.py
 .DS_Store
 flask/
 static/
+app.yaml
+appengine_config.py
