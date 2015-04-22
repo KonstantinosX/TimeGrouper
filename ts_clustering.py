@@ -65,14 +65,23 @@ class TSCluster:
         self.ptchnm2idx = {}
         #the filters used and the data after filtering
         self.slctData = []
+        self.slctDataMat = None
         self.slctNum = 0
         self.slctApp = {'all'}
         self.slctUM = {'all'}
         self.slctExpF = {'all'}
-        #similarity matrix and clustering result
+        #similarity matrix and clustering result based on selected data
         self.simMat = None
-        self.cluter = None
+        self.cluster = None
+        #summary of similarity matrix, every smmSc*smmSc integrated into one value
         self.simMatSmm = None
+        self.smmSc = 1
+        #data ordered after clustering
+        self.clstData = []
+        self.clstSimMat = None #this is the final matrix we should use
+        self.clstLbl = [] #indicate the cluster ID of each data in clustData
+        self.clstNum = 0 #number of clusters
+        #the patch name of TS in similarity matrix
         self.patchOrdering = None
 
     def loadTS(self, tsFile):
@@ -169,20 +178,39 @@ class TSCluster:
         else:
             print 'unknown ftr_type for ftr_type:', ftr_type
 
-        if type  == 'euclidean':
+        if type  == 'euclidean': #euclidean distance based on time series data
             self.simMat = skmpw.euclidean_distances(dataMat)
-        elif type == 'pca_euc':
+        elif type == 'pca_euc': #extract feature based on PCA, then use Euclidean distance
             pca = skd.PCA(n_components=pca_dim)
             dataMat = pca.fit_transform(dataMat)
             self.simMat = skmpw.euclidean_distances(dataMat)
-        elif type == 'nmf_euc':
-            nmf = skd.PCA(n_components=pca_dim)
+        elif type == 'nmf_euc': #extract feature based on NMF, then use Euclidean distance
+            nmf = skd.NMF(n_components=pca_dim)
             dataMat = nmf.fit_transform(dataMat)
             self.simMat = skmpw.euclidean_distances(dataMat)
+        elif type =='ica_euc': #extract feature based on ICA, then use Euclidean distance
+            ica = skd.FastICA(n_components=pca_dim)
+            dataMat = ica.fit_transform(dataMat)
+            self.simMat = skmpw.euclidean_distances(dataMat)
+        elif type =='cosine':
+            self.simMat = skmpw.pairwise_distances(dataMat, metric='cosine')
+        elif type == 'pca_cos': #extract feature based on PCA, then use cosine distance
+            pca = skd.PCA(n_components=pca_dim)
+            dataMat = pca.fit_transform(dataMat)
+            self.simMat = skmpw.pairwise_distances(dataMat, metric='cosine')
+        elif type == 'nmf_cos': #extract feature based on NMF, then use cosine distance
+            nmf = skd.NMF(n_components=pca_dim)
+            dataMat = nmf.fit_transform(dataMat)
+            self.simMat = skmpw.pairwise_distances(dataMat, metric='cosine')
+        elif type =='ica_cos': #extract feature based on ICA, then use cosine distance
+            ica = skd.FastICA(n_components=pca_dim)
+            dataMat = ica.fit_transform(dataMat)
+            self.simMat = skmpw.pairwise_distances(dataMat, metric='cosine')
         else:
             print 'unknown type for similarity matrix: ', type
 
         #rearrange the order of data in simMat
+        self.slctDataMat = dataMat
         if orderFlag:
             link = spc.hierarchy.linkage(self.simMat)
             dend = spc.hierarchy.dendrogram(link, no_plot=True)
@@ -191,10 +219,13 @@ class TSCluster:
             self.simMat = [self.simMat[i] for i in order]
             for i in xrange(len(self.simMat)):
                 self.simMat[i] = [self.simMat[i][j] for j in order]
+            self.slctDataMat = [self.slctDataMat[i] for i in order]
         self.patchOrdering = [ts.ptchNm for ts in self.slctData] #record new ordering
+        self.clstData = self.slctData
+        self.clstSimMat = self.simMat
 
     def getSimMatSummary(self, maxSize):
-        ttlSz = len(self.simMat)
+        ttlSz = len(self.clstSimMat)
         sc = 2.0
         while ttlSz/sc > maxSize:
             sc = 2.0*sc
@@ -210,15 +241,65 @@ class TSCluster:
                         ttl += self.simMat[i*sc+i2][j*sc+j2]
                 simMat[i].append(ttl)
         self.simMatSmm = simMat
+        self.smmSc = sc
 
 
-    def getCluster(self, type = 'kmeans', cNum = 50):
-        dataMat = [ts.val for ts in self.slctData]
+    def getCluster(self, type = 'kmeans', cNum = 20):
+        if type == 'kmeans': #kmeans clustering
+            cm = skc.KMeans(cNum)
+            self.cluster = cm.fit_predict(np.array(self.slctDataMat))
+        elif type == 'ap': #affinity propagation
+            cm = skc.AffinityPropagation(affinity='euclidean')
+            self.cluster = cm.fit_predict(np.array(self.slctDataMat))
+            cNum = len(cm.cluster_centers_indices_)
+        elif type == 'meanshift': #means shift
+            cm = skc.MeanShift()
+            self.cluster = cm.fit_predict(np.array(self.slctDataMat))
+            cNum = len(cm.cluster_centers_)
+        elif type == 'spectral': #spectral
+            cm = skc.SpectralClustering(cNum)
+            self.cluster = cm.fit_predict(np.array(self.slctDataMat))
+        elif type == 'hc': #hierarchical
+            cm = skc.AgglomerativeClustering(cNum)
+            self.cluster = cm.fit_predict(np.array(self.slctDataMat))
+        elif type == 'dbscan': # DBSCAN
+            cm = skc.DBSCAN()
+            self.cluster = cm.fit_predict(np.array(self.slctDataMat))
+            cNum = len(cm.core_sample_indices_ )
+            #print cNum
+        else:
+            print 'unknown cluster type:', type
+
+        #use clustering result to rearrange the order of
+        clst2idx = [[] for i in xrange(cNum)]
+        for i in xrange(len(self.cluster)):
+            clst2idx[self.cluster[i]].append(i)
+        #caculate average to decide order of clusterings
+        muClIdx = [np.mean(clst2idx[i]) for i in xrange(cNum)]
+        idx = np.argsort(muClIdx)
+        order =[]
+        for i in xrange(cNum):
+            order.extend(np.sort(clst2idx[idx[i]]))
+        self.clstData = [self.slctData[i] for i in order]
+        self.clstSimMat = [self.simMat[i] for i in order]
+        for i in xrange(len(self.clstSimMat)):
+            self.clstSimMat[i] = [self.clstSimMat[i][j] for j in order]
+        self.clstLbl = [self.cluster[i] for i in order]
+        self.clstNum = cNum
+        self.patchOrdering = [self.patchOrdering[i] for i in order]
+
 
     def drawSimMat(self):
         plt.figure()
-        labels = [ts.ptchNm for ts in self.slctData]
         plt.imshow(self.simMat, interpolation='nearest')
+        plt.title('SimMat')
+        plt.colorbar()
+        plt.ylabel('patches')
+        plt.xlabel('patches')
+
+    def drawClstSimMat(self):
+        plt.figure()
+        plt.imshow(self.clstSimMat, interpolation='nearest')
         plt.title('SimMat')
         plt.colorbar()
         plt.ylabel('patches')
@@ -277,6 +358,8 @@ if __name__ == '__main__':
     tsc.loadAttr(fileFolder+'\stat.csv')
     tsc.loadFtr(fileFolder+'\ziyun_ftr.input')
 
+    #test for similarity matrix
+    '''
     tsc.setAppFilter(['chrome', 'firefox'])
     tsc.slctTSData()
     tsc.getSimMat(ftr_type = 'ftr', orderFlag = True)
@@ -285,31 +368,73 @@ if __name__ == '__main__':
     tsc.drawSimMatSummary()
     tsc.getSimMatSummary(50)
     tsc.drawSimMatSummary()
-
-
     '''
-    tsc.setAppFilter(['chrome'])
 
+
+    tsc.setAppFilter(['chrome'])
+    '''
     #use input feature: Ziyun's feature
     tsc.slctTSData()
     tsc.getSimMat(ftr_type = 'ftr', orderFlag = False)
     tsc.drawSimMat()
     tsc.getSimMat(ftr_type = 'ftr', orderFlag = True)
     tsc.drawSimMat()
+
     #use raw time series and Euclidean distance
     tsc.slctTSData()
     tsc.getSimMat(ftr_type = 'data', orderFlag = False)
     tsc.drawSimMat()
     tsc.getSimMat(ftr_type = 'data', orderFlag = True)
     tsc.drawSimMat()
+
     #use pca feature of time series and Euclidean distance
     tsc.slctTSData()
     tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = False)
     tsc.drawSimMat()
     tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = True)
     tsc.drawSimMat()
-    '''
 
+    #use nmf feature of time series and Euclidean distance
+    tsc.slctTSData()
+    tsc.getSimMat(type='nmf_euc', ftr_type = 'data', orderFlag = False)
+    tsc.drawSimMat()
+    tsc.getSimMat(type='nmf_euc', ftr_type = 'data', orderFlag = True)
+    tsc.drawSimMat()
+
+    #use ica feature of time series and Euclidean distance
+    tsc.slctTSData()
+    tsc.getSimMat(type='ica_euc', ftr_type = 'data', orderFlag = False)
+    tsc.drawSimMat()
+    tsc.getSimMat(type='ica_euc', ftr_type = 'data', orderFlag = True)
+    tsc.drawSimMat()
+
+    #use cosine distance
+    tsc.slctTSData()
+    tsc.getSimMat(type='cosine', ftr_type = 'data', orderFlag = False)
+    tsc.drawSimMat()
+    tsc.getSimMat(type='cosine', ftr_type = 'data', orderFlag = True)
+    tsc.drawSimMat()
+    tsc.slctTSData()
+    tsc.getSimMat(type='pca_cos', ftr_type = 'data', orderFlag = False)
+    tsc.drawSimMat()
+    tsc.getSimMat(type='pca_cos', ftr_type = 'data', orderFlag = True)
+    tsc.drawSimMat()
+    tsc.slctTSData()
+    tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = False)
+    tsc.drawSimMat()
+    tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = True)
+    tsc.drawSimMat()
+    '''
+    #test clustering
+    tsc.slctTSData()
+    tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = False)
+    tsc.getCluster(type='dbscan')
+    tsc.drawSimMat()
+    tsc.drawClstSimMat()
+    tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = True)
+    tsc.getCluster(type='dbscan')
+    tsc.drawSimMat()
+    tsc.drawClstSimMat()
     #save matrix
     #tsc.writeSimMatCSV(fileFolder+'\PatchName.csv', fileFolder+'\SimMat.csv')
     plt.show()
