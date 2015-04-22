@@ -9,5 +9,3 @@ six==1.9.0
 gunicorn==19.3.0
 enum
 pickledb
-numpy==1.9.0
-scipy==0.14.0
