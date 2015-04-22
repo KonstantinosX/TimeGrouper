@@ -1,5 +1,5 @@
 # TimeGrouper
-To run the TimeGrouper backend in a python virtual environment, follow these steps:
+To run the TimeGrouper backend __localy__ in a python virtual environment, follow these steps:
 
 1. Run ```./setup.sh``` on Linux/Mac and ```setup.bat``` on Windows. This will install all python packages needed in a virtual environment in  ```flask/```
 
