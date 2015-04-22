@@ -10,3 +10,4 @@ enum
 numpy
 scipy
 pickledb
+guinicorn
