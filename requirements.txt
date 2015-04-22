@@ -10,3 +10,4 @@ gunicorn==19.3.0
 enum
 pickledb
 numpy==1.8.1
+scipy==0.14.0
