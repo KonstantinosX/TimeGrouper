@@ -23,10 +23,13 @@ dataPath = os.path.dirname(os.path.abspath('__file__'))
 parser = reqparse.RequestParser()
 parser.add_argument('patchId', type=str, action='append')
 parser.add_argument('appName', type=str, action='append')
-parser.add_argument('filter', type=str, action='append')
+parser.add_argument('updateMech', type=str, action='append')
+parser.add_argument('exploitable', type=str, action='append')
+parser.add_argument('highlight', type=str, action='append')
+parser.add_argument('simMetric', type=str, required=True)
+parser.add_argument('cAlgorithm', type=str, required=True) #clustering algorithm
 
-
-def loadData(app_filter=['all'],filters=['all']):
+def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_filter=['all']):
     """
     Calls the clustering code which reads the data into a python object,
     and loads that python object into pickledb to be called and served to the front end. returns the read python object to be converted to JSON and served.
@@ -38,9 +41,21 @@ def loadData(app_filter=['all'],filters=['all']):
         tsc.loadFtr(dataPath + os.path.abspath("/data/ziyun_ftr.input"))
         currentData.set('currData',tsc)
     tsc = currentData.get('currData')
-    tsc.setAppFilter(app_filter)
-    tsc.slctTSData(filters)
-    tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = True)
+    if(app_filter != None):
+        tsc.setAppFilter(app_filter)
+    if(um_filter != None):
+        tsc.setUMFilter(um_filter)
+    if(exp_filter != None):
+        for f in exp_filter:
+            if f.lower() == 'true':
+                exp_filter = [True]
+            else:
+                exp_filter = [None]
+        tsc.setExpFilter(exp_filter)
+    tsc.slctTSData()
+    print simMetric
+    tsc.getSimMat(type=simMetric, ftr_type = 'data', orderFlag = True)
+    tsc.getCluster(type=cAlgorithm)
     currentData.set('currData',tsc)
     currData = tsc
     return tsc
@@ -55,6 +70,15 @@ def abort_if_patch_doesnt_exist(patch_id):
     if patch_id not in  currData.ptchnm2idx:
         abort(404, message="Patch {} doesn't exist".format(patch_id))
 
+def gethighlights(highlight,appNSplits):
+    toRet = []
+    for colIdx, col in enumerate(appNSplits):
+        if col in highlight:
+            for rowIdx, row in enumerate(appNSplits):
+                if row in highlight:
+                    toRet.append([colIdx,rowIdx])
+    return toRet
+
 class PatchTS(Resource):
     """
     Resource that returns the time series data for all the patches in the request. The request can either contain a single patch (GET) or multiple patches (POST)
@@ -68,18 +92,21 @@ class PatchTS(Resource):
         currData = currentData.get('currData')
         toReturn = []
         args = parser.parse_args()
-        tehArgs = args['patchId']
-        print tehArgs
-        for a in tehArgs:
+        patchIds = args['patchId']
+        toHighlight = args['highlight']
+        appNameSplits = [t.split("_")[0] for t in currData.patchOrdering]
+        if toHighlight != None:
+            toReturn = gethighlights(toHighlight,appNameSplits)
+        return json.dumps(toReturn)
+        for a in patchIds:
             print a
             abort_if_patch_doesnt_exist(a)
-            timeSeriesD = currData.tsData[currData.ptchnm2idx[a]].val
+            timeSeriesD = currData.slctData[currData.ptchnm2idx[a]].val
             entry = {str(a) : timeSeriesD}
             toReturn.append(entry)
         jsonToRet = json.dumps(toReturn)
         print jsonToRet
         return jsonToRet
-
 
 #
 class SMatrix(Resource):
@@ -101,11 +128,15 @@ class SMatrix(Resource):
 
     def post(self):
         args = parser.parse_args()
-        argz = args['appName']
-        print argz
-        updM = parser.parse_args()
-        filters = args['filter']
-        return loadData(argz,filters).toJSON()
+        appNames = args['appName']
+        print appNames
+        updateMech = args['updateMech']
+        print updateMech
+        exploitable = args['exploitable']
+        simMetric = args['simMetric']
+        clusteringAlg = args['cAlgorithm']
+        print exploitable
+        return loadData(simMetric,clusteringAlg,appNames,updateMech,exploitable).toJSON()
         # return None
 
 

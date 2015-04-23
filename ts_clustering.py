@@ -18,7 +18,7 @@ import csv
 import numpy as np
 import scipy.spatial.distance as spd
 import scipy.cluster as spc
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 from math import floor
 import math
 import json
@@ -164,6 +164,7 @@ class TSCluster:
         if not 'all' in self.slctUM:
             self.slctData = [ts for ts in self.slctData if ts.upM in self.slctUM]
         if not 'all' in self.slctExpF:
+            print self.slctExpF
             self.slctData = [ts for ts in self.slctData if ts.expFlag in self.slctExpF]
         print 'selected data:', len(self.slctData)
 
@@ -311,11 +312,28 @@ class TSCluster:
 
         Format:
         [[ 'patch1', 'patch2', ... ] , [similatiry matrix]]
+
+        If we have a lot of data (number of patches > 100 ) it includes the Summary of the similarity matrix like so:
+
+        Format:
+        [[summary matrix] , [ 'patch1', 'patch2', ... ] , [similatiry matrix]]
         """
+        
         jsonToRet = []
-        jsonToRet.append(self.patchOrdering)
         rowJson = []
         matrixJson = []
+
+        if len(self.slctData) > 100:
+            self.getSimMatSummary(100)
+            for i in range(0,len(self.simMatSmm)):
+                for n in self.simMatSmm[i]:
+                    rowJson.append(n)
+                matrixJson.append(rowJson)
+                rowJson = []
+            jsonToRet.append(matrixJson)
+
+
+        jsonToRet.append(self.patchOrdering)
 
         for i in range(0,len(self.simMat)):
             for n in self.simMat[i]:
@@ -346,95 +364,3 @@ class TSCluster:
                     fid.write(str(val))
                     fid.write(',')
                 fid.write('\n')
-
-
-
-
-if __name__ == '__main__':
-    # test demo
-    fileFolder = r'D:\UMD\class\2015Spring\cmsc734\termProject'
-    tsc = TSCluster()
-    tsc.loadTS(fileFolder+'\hazard_alg_TP.input')
-    tsc.loadAttr(fileFolder+'\stat.csv')
-    tsc.loadFtr(fileFolder+'\ziyun_ftr.input')
-
-    #test for similarity matrix
-    '''
-    tsc.setAppFilter(['chrome', 'firefox'])
-    tsc.slctTSData()
-    tsc.getSimMat(ftr_type = 'ftr', orderFlag = True)
-    tsc.drawSimMat()
-    tsc.getSimMatSummary(100)
-    tsc.drawSimMatSummary()
-    tsc.getSimMatSummary(50)
-    tsc.drawSimMatSummary()
-    '''
-
-
-    tsc.setAppFilter(['chrome'])
-    '''
-    #use input feature: Ziyun's feature
-    tsc.slctTSData()
-    tsc.getSimMat(ftr_type = 'ftr', orderFlag = False)
-    tsc.drawSimMat()
-    tsc.getSimMat(ftr_type = 'ftr', orderFlag = True)
-    tsc.drawSimMat()
-
-    #use raw time series and Euclidean distance
-    tsc.slctTSData()
-    tsc.getSimMat(ftr_type = 'data', orderFlag = False)
-    tsc.drawSimMat()
-    tsc.getSimMat(ftr_type = 'data', orderFlag = True)
-    tsc.drawSimMat()
-
-    #use pca feature of time series and Euclidean distance
-    tsc.slctTSData()
-    tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = False)
-    tsc.drawSimMat()
-    tsc.getSimMat(type='pca_euc', ftr_type = 'data', orderFlag = True)
-    tsc.drawSimMat()
-
-    #use nmf feature of time series and Euclidean distance
-    tsc.slctTSData()
-    tsc.getSimMat(type='nmf_euc', ftr_type = 'data', orderFlag = False)
-    tsc.drawSimMat()
-    tsc.getSimMat(type='nmf_euc', ftr_type = 'data', orderFlag = True)
-    tsc.drawSimMat()
-
-    #use ica feature of time series and Euclidean distance
-    tsc.slctTSData()
-    tsc.getSimMat(type='ica_euc', ftr_type = 'data', orderFlag = False)
-    tsc.drawSimMat()
-    tsc.getSimMat(type='ica_euc', ftr_type = 'data', orderFlag = True)
-    tsc.drawSimMat()
-
-    #use cosine distance
-    tsc.slctTSData()
-    tsc.getSimMat(type='cosine', ftr_type = 'data', orderFlag = False)
-    tsc.drawSimMat()
-    tsc.getSimMat(type='cosine', ftr_type = 'data', orderFlag = True)
-    tsc.drawSimMat()
-    tsc.slctTSData()
-    tsc.getSimMat(type='pca_cos', ftr_type = 'data', orderFlag = False)
-    tsc.drawSimMat()
-    tsc.getSimMat(type='pca_cos', ftr_type = 'data', orderFlag = True)
-    tsc.drawSimMat()
-    tsc.slctTSData()
-    tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = False)
-    tsc.drawSimMat()
-    tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = True)
-    tsc.drawSimMat()
-    '''
-    #test clustering
-    tsc.slctTSData()
-    tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = False)
-    tsc.getCluster(type='dbscan')
-    tsc.drawSimMat()
-    tsc.drawClstSimMat()
-    tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = True)
-    tsc.getCluster(type='dbscan')
-    tsc.drawSimMat()
-    tsc.drawClstSimMat()
-    #save matrix
-    #tsc.writeSimMatCSV(fileFolder+'\PatchName.csv', fileFolder+'\SimMat.csv')
-    plt.show()
