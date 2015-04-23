@@ -334,6 +334,9 @@ class TSCluster:
 
 
         jsonToRet.append(self.patchOrdering)
+        # jsonToRet = []
+        rowJson = []
+        matrixJson = []
 
         for i in range(0,len(self.simMat)):
             for n in self.simMat[i]:
