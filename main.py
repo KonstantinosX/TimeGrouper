@@ -20,14 +20,16 @@ currentData = pickledb.load('currData.db',False) #open db
 db = pickledb.load('database.db',False)
 dataPath = os.path.dirname(os.path.abspath('__file__'))
 # currData = TSCluster()
-parser = reqparse.RequestParser()
-parser.add_argument('patchId', type=str, action='append')
-parser.add_argument('appName', type=str, action='append')
-parser.add_argument('updateMech', type=str, action='append')
-parser.add_argument('exploitable', type=str, action='append')
-parser.add_argument('highlight', type=str, action='append')
-parser.add_argument('simMetric', type=str, required=True)
-parser.add_argument('cAlgorithm', type=str, required=True) #clustering algorithm
+simMatParser = reqparse.RequestParser()
+patchesParser = reqparse.RequestParser()
+
+patchesParser.add_argument('patchId', type=str, action='append')
+patchesParser.add_argument('highlight', type=str, action='append')
+simMatParser.add_argument('appName', type=str, action='append')
+simMatParser.add_argument('updateMech', type=str, action='append')
+simMatParser.add_argument('exploitable', type=str, action='append')
+simMatParser.add_argument('simMetric', type=str, required=True)
+simMatParser.add_argument('cAlgorithm', type=str, required=True) #clustering algorithm
 
 def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_filter=['all']):
     """
@@ -53,7 +55,7 @@ def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_fil
                 exp_filter = [None]
         tsc.setExpFilter(exp_filter)
     tsc.slctTSData()
-    print simMetric
+    # print simMetric
     tsc.getSimMat(type=simMetric, ftr_type = 'data', orderFlag = True)
     tsc.getCluster(type=cAlgorithm)
     currentData.set('currData',tsc)
@@ -66,7 +68,6 @@ def abort_if_patch_doesnt_exist(patch_id):
     Aborts and returns an appropriate message if the patches requested don't exist
     """
     currData = currentData.get('currData')
-    print currData.ptchnm2idx
     if patch_id not in  currData.ptchnm2idx:
         abort(404, message="Patch {} doesn't exist".format(patch_id))
 
@@ -91,21 +92,19 @@ class PatchTS(Resource):
     def post(self):
         currData = currentData.get('currData')
         toReturn = []
-        args = parser.parse_args()
+        args = patchesParser.parse_args()
         patchIds = args['patchId']
         toHighlight = args['highlight']
         appNameSplits = [t.split("_")[0] for t in currData.patchOrdering]
         if toHighlight != None:
             toReturn = gethighlights(toHighlight,appNameSplits)
-        return json.dumps(toReturn)
+            return json.dumps(toReturn)
         for a in patchIds:
-            print a
             abort_if_patch_doesnt_exist(a)
-            timeSeriesD = currData.slctData[currData.ptchnm2idx[a]].val
+            timeSeriesD = currData.slctData[currData.ptchnm2idx[a]].trimZeros()
             entry = {str(a) : timeSeriesD}
             toReturn.append(entry)
         jsonToRet = json.dumps(toReturn)
-        print jsonToRet
         return jsonToRet
 
 #
@@ -127,15 +126,12 @@ class SMatrix(Resource):
         return simMatJSON
 
     def post(self):
-        args = parser.parse_args()
+        args = simMatParser.parse_args()
         appNames = args['appName']
-        print appNames
         updateMech = args['updateMech']
-        print updateMech
         exploitable = args['exploitable']
         simMetric = args['simMetric']
         clusteringAlg = args['cAlgorithm']
-        print exploitable
         return loadData(simMetric,clusteringAlg,appNames,updateMech,exploitable).toJSON()
         # return None
 

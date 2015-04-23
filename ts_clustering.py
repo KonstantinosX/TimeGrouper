@@ -53,6 +53,18 @@ class PatchTS:
     def setFtr(self, ftr):
         self.ftr = list(ftr)
 
+    def trimZeros(self):
+        # print type(self.val)
+        # print self.val
+        for i in range(len(self.val) -1, -1, -1):
+            if self.val[i] != 0.0:
+                # self.val = self.val[:i]
+                # print self.val[:i+1]
+                if i >0:
+                    return self.val[:i+1]
+                else:
+                    return None
+
 
 
 class TSCluster:
@@ -164,7 +176,7 @@ class TSCluster:
         if not 'all' in self.slctUM:
             self.slctData = [ts for ts in self.slctData if ts.upM in self.slctUM]
         if not 'all' in self.slctExpF:
-            print self.slctExpF
+            # print self.slctExpF
             self.slctData = [ts for ts in self.slctData if ts.expFlag in self.slctExpF]
         print 'selected data:', len(self.slctData)
 
