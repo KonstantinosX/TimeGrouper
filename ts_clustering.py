@@ -18,7 +18,7 @@ import csv
 import numpy as np
 import scipy.spatial.distance as spd
 import scipy.cluster as spc
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from math import floor
 import math
 import json
@@ -99,6 +99,7 @@ class TSCluster:
         self.clstNum = 0 #number of clusters
         #the patch name of TS in similarity matrix
         self.patchOrdering = None
+        self.summaryOrdering = None
 
 
     def loadTS(self, tsFile):
@@ -195,6 +196,8 @@ class TSCluster:
             dataMat = [ts.val for ts in self.slctData]
         else:
             print 'unknown ftr_type for ftr_type:', ftr_type
+        if pca_dim > len(dataMat):
+            pca_dim = int(math.ceil(len(dataMat)/2.0))
 
         if type  == 'euclidean': #euclidean distance based on time series data
             self.simMat = skmpw.euclidean_distances(dataMat)
@@ -252,6 +255,9 @@ class TSCluster:
         newSz = int(math.floor(ttlSz/sc))
         sc = int(sc)
         simMat = []
+        summaryOrdering = []
+        groupSum = []
+        counter = 0
         for i in xrange(newSz):
             simMat.append([])
             for j in xrange(newSz):
@@ -259,12 +265,26 @@ class TSCluster:
                 for i2 in xrange(sc):
                     for j2 in xrange(sc):
                         ttl += self.simMat[i*sc+i2][j*sc+j2]
+                        nm_i = self.patchOrdering[i*sc+i2]['name']
+                        nm_j = self.patchOrdering[j*sc+j2]['name']
+                        tile = []
+                        tile.append(nm_i)
+                        tile.append(nm_j)
+                        groupSum.append(tile)
+
                 simMat[i].append(ttl)
+                summaryOrdering.append({'group'+str(counter): groupSum})
+                groupSum = []
+                counter = counter + 1
         self.simMatSmm = simMat
         self.smmSc = sc
+        # print summaryOrdering
+        self.summaryOrdering = summaryOrdering
 
 
     def getCluster(self, type = 'kmeans', cNum = 20):
+        if cNum > len(self.slctDataMat):
+            cNum = int(math.ceil(len(self.slctDataMat)/5.0))
         if type == 'kmeans': #kmeans clustering
             cm = skc.KMeans(cNum)
             self.cluster = cm.fit_predict(np.array(self.slctDataMat))
@@ -345,13 +365,13 @@ class TSCluster:
 
         if len(self.slctData) > 100:
             self.getSimMatSummary(100)
+            jsonToRet.append(self.summaryOrdering)
             for i in range(0,len(self.simMatSmm)):
                 for n in self.simMatSmm[i]:
                     rowJson.append(n)
                 matrixJson.append(rowJson)
                 rowJson = []
             jsonToRet.append(matrixJson)
-
 
         jsonToRet.append(self.patchOrdering)
         # jsonToRet = []
@@ -387,3 +407,6 @@ class TSCluster:
                     fid.write(str(val))
                     fid.write(',')
                 fid.write('\n')
+    def printAllAppNm(self):
+        for i in xrange(self.tsNum):
+            print self.tsData[i].appNm

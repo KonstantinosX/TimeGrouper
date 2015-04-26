@@ -12,14 +12,16 @@ import math
 import json
 from ts_clustering import TSCluster
 import os
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     # test demo
-    fileFolder = os.path.dirname(os.path.abspath('__file__'))
+    fileFolder = os.path.dirname(os.path.abspath('__file__'))+'/data'
+    # fileFolder = r'D:\UMD\class\2015Spring\cmsc734\termProject'
     tsc = TSCluster()
-    tsc.loadTS(fileFolder+'/data/hazard_alg_TP.input')
-    tsc.loadAttr(fileFolder+'/data/stat.csv')
-    tsc.loadFtr(fileFolder+'/data/ziyun_ftr.input')
+    tsc.loadTS(fileFolder+'/hazard_alg_TP.input')
+    tsc.loadAttr(fileFolder+'/stat.csv')
+    tsc.loadFtr(fileFolder+'/ziyun_ftr.input')
 
     #test for similarity matrix
     '''
@@ -34,7 +36,9 @@ if __name__ == '__main__':
     '''
 
 
-    tsc.setAppFilter(['acroread'])
+
+    tsc.setAppFilter(['msword'])
+
     '''
     #use input feature: Ziyun's feature
     tsc.slctTSData()
