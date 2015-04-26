@@ -32,8 +32,9 @@ patchesParser.add_argument('highlight', type=str, action='append')
 simMatParser.add_argument('appName', type=str, action='append')
 simMatParser.add_argument('updateMech', type=str, action='append')
 simMatParser.add_argument('exploitable', type=str, action='append')
-simMatParser.add_argument('simMetric', type=str, required=True)
+simMatParser.add_argument('simMetric', type=str, required=True) #similarity metric
 simMatParser.add_argument('cAlgorithm', type=str, required=True) #clustering algorithm
+simMatParser.add_argument('ftr_type', type=str) # data or ftr
 
 @main.after_request
 def after_request(response):
@@ -42,7 +43,7 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
     return response
 
-def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_filter=None):
+def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_filter=None,ftr_t='data'):
     """
     Calls the clustering code which reads the data into a python object,
     and loads that python object into pickledb to be called and served to the front end. returns the read python object to be converted to JSON and served.
@@ -54,10 +55,10 @@ def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_fil
         tsc.loadFtr(dataPath + os.path.abspath("/data/ziyun_ftr.input"))
         currentData.set('currData',tsc)
     tsc = currentData.get('currData')
-    print app_filter
-    print simMetric
-    print cAlgorithm
-    print exp_filter
+    print 'similarity Metric: '+simMetric
+    print 'clustering alg: '+cAlgorithm
+    print 'exp_filter: '+str(exp_filter)
+    print 'feature type: '+ftr_t
     if(app_filter != None):
         tsc.setAppFilter(app_filter)
     if(um_filter != None):
@@ -70,7 +71,7 @@ def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_fil
                 exp_filter = [None]
         tsc.setExpFilter(exp_filter)
     tsc.slctTSData()
-    tsc.getSimMat(type=simMetric, ftr_type = 'data', orderFlag = True)
+    tsc.getSimMat(type=simMetric, ftr_type=ftr_t, orderFlag = True)
     tsc.getCluster(type=cAlgorithm)
     currentData.set('currData',tsc)
     currData = tsc
@@ -150,15 +151,11 @@ class SMatrix(Resource):
         exploitable = args['exploitable']
         simMetric = args['simMetric']
         clusteringAlg = args['cAlgorithm']
-        strAppNames = '_'.join(appNames)
-        print strAppNames
-        matrix = db.get(strAppNames) #cache result in database
-        if(matrix != None):
-            print 'hit DB'
-            return matrix
-        simMatJSON = loadData(simMetric,clusteringAlg,appNames,updateMech,exploitable).toJSON()
-        db.set(strAppNames,simMatJSON)
-        db.dump()
+        ftr_type = args['ftr_type']
+        if ftr_type == None:
+            ftr_type = 'data'
+        print appNames
+        simMatJSON = loadData(simMetric,clusteringAlg,appNames,updateMech,exploitable,ftr_type).toJSON()
         return simMatJSON
         # return None
 

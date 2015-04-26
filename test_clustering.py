@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
 
 
-    tsc.setAppFilter(['msword'])
+    tsc.setAppFilter(['firefox'])
 
     '''
     #use input feature: Ziyun's feature
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     # tsc.getCluster(type='dbscan')
     # tsc.drawSimMat()
     # tsc.drawClstSimMat()
-    tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = True)
+    tsc.getSimMat(type='nmf_euc', ftr_type = 'ftr', orderFlag = True)
     tsc.getCluster(type='dbscan')
     # tsc.drawSimMat()
     # tsc.drawClstSimMat()
