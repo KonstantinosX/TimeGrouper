@@ -7,6 +7,7 @@ TimeGrouper, our CMSC734 Term Project
 
 from flask import Flask
 from flask_restful import reqparse, abort, Api, Resource
+from flask.ext.cors import CORS, cross_origin
 from ts_clustering import TSCluster
 from StringIO import StringIO
 import json
@@ -16,6 +17,8 @@ import os
 # Initial assignments
 main = Flask(__name__)
 api = Api(main)
+cors = CORS(main)
+
 currentData = pickledb.load('currData.db',False) #open db
 db = pickledb.load('database.db',False)
 dataPath = os.path.dirname(os.path.abspath('__file__'))
@@ -30,6 +33,13 @@ simMatParser.add_argument('updateMech', type=str, action='append')
 simMatParser.add_argument('exploitable', type=str, action='append')
 simMatParser.add_argument('simMetric', type=str, required=True)
 simMatParser.add_argument('cAlgorithm', type=str, required=True) #clustering algorithm
+
+@main.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+    return response
 
 def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_filter=['all']):
     """
