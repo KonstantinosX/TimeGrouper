@@ -21,6 +21,7 @@ cors = CORS(main)
 
 currentData = pickledb.load('currData.db',False) #open db
 db = pickledb.load('database.db',False)
+db.deldb() #delete db
 dataPath = os.path.dirname(os.path.abspath('__file__'))
 # currData = TSCluster()
 simMatParser = reqparse.RequestParser()
