@@ -41,7 +41,7 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
     return response
 
-def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_filter=['all']):
+def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_filter=None):
     """
     Calls the clustering code which reads the data into a python object,
     and loads that python object into pickledb to be called and served to the front end. returns the read python object to be converted to JSON and served.
@@ -53,6 +53,10 @@ def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_fil
         tsc.loadFtr(dataPath + os.path.abspath("/data/ziyun_ftr.input"))
         currentData.set('currData',tsc)
     tsc = currentData.get('currData')
+    print app_filter
+    print simMetric
+    print cAlgorithm
+    print exp_filter
     if(app_filter != None):
         tsc.setAppFilter(app_filter)
     if(um_filter != None):
@@ -65,7 +69,6 @@ def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_fil
                 exp_filter = [None]
         tsc.setExpFilter(exp_filter)
     tsc.slctTSData()
-    # print simMetric
     tsc.getSimMat(type=simMetric, ftr_type = 'data', orderFlag = True)
     tsc.getCluster(type=cAlgorithm)
     currentData.set('currData',tsc)
@@ -125,12 +128,16 @@ class SMatrix(Resource):
     """
 
     def get(self,app_filter='all'):
-        matrix = db.get(app_filter)
+        matrix = db.get(app_filter) #cache result in database
         if(matrix != None):
+            print 'hit DB'
             return matrix
         filt = []
         filt.append(app_filter)
-        simMatJSON = loadData(filt).toJSON()
+        simMetric = 'ica_cos' #default simMetric for GET request
+        clusterAlg = 'dbscan' #default clustering Alg for GET request
+        simMatJSON = loadData(simMetric,clusterAlg,filt).toJSON()
+        # simMatJSON = loadData(filt).toJSON()
         db.set(app_filter,simMatJSON)
         db.dump()
         return simMatJSON
@@ -142,7 +149,16 @@ class SMatrix(Resource):
         exploitable = args['exploitable']
         simMetric = args['simMetric']
         clusteringAlg = args['cAlgorithm']
-        return loadData(simMetric,clusteringAlg,appNames,updateMech,exploitable).toJSON()
+        strAppNames = '_'.join(appNames)
+        print strAppNames
+        matrix = db.get(strAppNames) #cache result in database
+        if(matrix != None):
+            print 'hit DB'
+            return matrix
+        simMatJSON = loadData(simMetric,clusteringAlg,appNames,updateMech,exploitable).toJSON()
+        db.set(strAppNames,simMatJSON)
+        db.dump()
+        return simMatJSON
         # return None
 
 

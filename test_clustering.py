@@ -34,7 +34,7 @@ if __name__ == '__main__':
     '''
 
 
-    tsc.setAppFilter(['thunderbird'])
+    tsc.setAppFilter(['acroread'])
     '''
     #use input feature: Ziyun's feature
     tsc.slctTSData()

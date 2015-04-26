@@ -18,7 +18,7 @@ import csv
 import numpy as np
 import scipy.spatial.distance as spd
 import scipy.cluster as spc
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 from math import floor
 import math
 import json
@@ -65,7 +65,11 @@ class PatchTS:
                 else:
                     return None
 
-
+def JSONifyData(data):
+    json = []
+    for ts in data:
+        json.append({'name': ts.ptchNm , 'app': ts.appNm, 'updateMech': ts.upM, 'exploitable': ts.expFlag})
+    return json
 
 class TSCluster:
     ' this class is used to caculate the similarity matrix and do clustering for time series'
@@ -95,6 +99,7 @@ class TSCluster:
         self.clstNum = 0 #number of clusters
         #the patch name of TS in similarity matrix
         self.patchOrdering = None
+
 
     def loadTS(self, tsFile):
         #load time series
@@ -233,9 +238,11 @@ class TSCluster:
             for i in xrange(len(self.simMat)):
                 self.simMat[i] = [self.simMat[i][j] for j in order]
             self.slctDataMat = [self.slctDataMat[i] for i in order]
-        self.patchOrdering = [ts.ptchNm for ts in self.slctData] #record new ordering
+        # self.patchOrdering = [ts.ptchNm for ts in self.slctData] #record new ordering
+        self.patchOrdering = JSONifyData(self.slctData) # Deok wants all the data for each patch in the response
         self.clstData = self.slctData
         self.clstSimMat = self.simMat
+
 
     def getSimMatSummary(self, maxSize):
         ttlSz = len(self.clstSimMat)
@@ -299,7 +306,8 @@ class TSCluster:
             self.clstSimMat[i] = [self.clstSimMat[i][j] for j in order]
         self.clstLbl = [self.cluster[i] for i in order]
         self.clstNum = cNum
-        self.patchOrdering = [self.patchOrdering[i] for i in order]
+        # self.patchOrdering = [self.patchOrdering[i] for i in order]
+        self.patchOrdering = JSONifyData(self.clstData)
 
 
     def drawSimMat(self):
