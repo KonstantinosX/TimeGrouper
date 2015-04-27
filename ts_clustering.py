@@ -267,13 +267,17 @@ class TSCluster:
                         ttl += self.simMat[i*sc+i2][j*sc+j2]
                         nm_i = self.patchOrdering[i*sc+i2]['name']
                         nm_j = self.patchOrdering[j*sc+j2]['name']
-                        tile = []
-                        tile.append(nm_i)
-                        tile.append(nm_j)
-                        groupSum.append(tile)
+                        # tile = []
+                        # tile.append(nm_i)
+                        # tile.append(nm_j)
+                        # groupSum.append(tile)
+                        if nm_i not in groupSum:
+                            groupSum.append(nm_i)
+                        if nm_j not in groupSum:
+                            groupSum.append(nm_j)
 
                 simMat[i].append(ttl)
-                summaryOrdering.append({'group'+str(counter): groupSum})
+                summaryOrdering.append({'name': 'group'+str(counter), 'patches': groupSum})
                 groupSum = []
                 counter = counter + 1
         self.simMatSmm = simMat
