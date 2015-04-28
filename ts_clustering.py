@@ -252,6 +252,7 @@ class TSCluster:
         sc = 2.0
         while ttlSz/sc > maxSize:
             sc = 2.0*sc
+        print "Summarizing by factor of :"+ str(sc)
         newSz = int(math.floor(ttlSz/sc))
         sc = int(sc)
         simMat = []
@@ -265,21 +266,22 @@ class TSCluster:
                 for i2 in xrange(sc):
                     for j2 in xrange(sc):
                         ttl += self.simMat[i*sc+i2][j*sc+j2]
-                        nm_i = self.patchOrdering[i*sc+i2]['name']
-                        nm_j = self.patchOrdering[j*sc+j2]['name']
+                    nm_i = self.patchOrdering[i*sc+i2]['name']
+                        # nm_j = self.patchOrdering[j*sc+j2]['name']
                         # tile = []
                         # tile.append(nm_i)
                         # tile.append(nm_j)
                         # groupSum.append(tile)
-                        if nm_i not in groupSum:
-                            groupSum.append(nm_i)
-                        if nm_j not in groupSum:
-                            groupSum.append(nm_j)
+                    if nm_i not in groupSum:
+                        groupSum.append(nm_i)
+                        # if nm_j not in groupSum:
+                        #     groupSum.append(nm_j)
 
                 simMat[i].append(ttl)
-                summaryOrdering.append({'name': 'group'+str(counter), 'patches': groupSum})
-                groupSum = []
-                counter = counter + 1
+                # generate ordering of apps for summary matrix.
+            summaryOrdering.append({'name': 'group'+str(counter), 'patches': groupSum})
+            groupSum = []
+            counter = counter + 1
         self.simMatSmm = simMat
         self.smmSc = sc
         # print summaryOrdering
