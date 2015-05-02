@@ -43,6 +43,9 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
     return response
 
+def sth():
+    
+
 def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_filter=None,ftr_t='data'):
     """
     Calls the clustering code which reads the data into a python object,
