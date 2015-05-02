@@ -110,8 +110,8 @@ class PatchTS(Resource):
         args = patchesParser.parse_args()
         patchIds = args['patchId']
         toHighlight = args['highlight']
-        appNameSplits = [t.split("_")[0] for t in currData.patchOrdering]
         if toHighlight != None:
+            appNameSplits = [t['name'].split("_")[0] for t in currData.patchOrdering]
             toReturn = gethighlights(toHighlight,appNameSplits)
             return json.dumps(toReturn)
         for a in patchIds:
