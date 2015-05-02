@@ -11,4 +11,4 @@ static/
 app.yaml
 appengine_config.py
 *.db
-test*
+testP*
