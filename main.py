@@ -13,6 +13,7 @@ from StringIO import StringIO
 import json
 import pickledb
 import os
+import sys
 
 # Initial assignments
 main = Flask(__name__)
@@ -43,8 +44,12 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
     return response
 
-def sth():
-    
+def loadToPickleDB(tsc):
+    for ts in tsc.tsData:
+        db.set(ts.ptchNm,{'appName': ts.appNm, 'updateMech': ts.upM, 'exploitable': ts.expFlag, 'ts': ts.trimZeros(), 'ftrs': ts.ftr})
+        # print db.get(ts.ptchNm)
+    db.dump()
+
 
 def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_filter=None,ftr_t='data'):
     """
@@ -58,6 +63,8 @@ def loadData(simMetric, cAlgorithm, app_filter=['all'],um_filter=['all'],exp_fil
         tsc.loadFtr(dataPath + os.path.abspath("/data/ziyun_ftr.input"))
         currentData.set('currData',tsc)
     tsc = currentData.get('currData')
+    loadToPickleDB(tsc)
+    sys.exit()
     print 'similarity Metric: '+simMetric
     print 'clustering alg: '+cAlgorithm
     print 'exp_filter: '+str(exp_filter)
@@ -125,7 +132,6 @@ class PatchTS(Resource):
         jsonToRet = json.dumps(toReturn)
         return jsonToRet
 
-#
 class SMatrix(Resource):
     """
     Calling a GET on getSimMatrix will load the data into the append

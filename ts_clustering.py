@@ -63,7 +63,7 @@ class PatchTS:
                 if i >0:
                     return self.val[:i+1]
                 else:
-                    return None
+                    return self.val
 
 def JSONifyData(data):
     json = []
@@ -100,6 +100,9 @@ class TSCluster:
         #the patch name of TS in similarity matrix
         self.patchOrdering = None
         self.summaryOrdering = None
+
+        #generalized filters
+        self.filters = {}
 
 
     def loadTS(self, tsFile):
@@ -173,6 +176,16 @@ class TSCluster:
         self.slctUM = set(um)
     def setExpFilter(self, exp):
         self.slctExpF = set(exp)
+
+    #generalized filters
+    def setFilter(self,filterName,filterValue):
+        self.filters[filterName] = filterValue
+
+    def slctGeneralTSData(self):
+        self.slctData = db.getall()
+        for filt, values in ts.iteritems():
+            self.slctData = [ts for ts in self.slctData if ts[filt] in values]
+            #Requires testing and integration
 
     def slctTSData(self):
         self.slctData = self.tsData
