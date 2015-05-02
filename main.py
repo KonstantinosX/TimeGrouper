@@ -3,6 +3,7 @@ This flask RESTful app is part of
 TimeGrouper, our CMSC734 Term Project
 
 @author: Konstantinos Xirogiannopoulos, kostasx@cs.umd.edu, 4/19/2015
+Release Candidate 1.2
 '''
 
 from flask import Flask
