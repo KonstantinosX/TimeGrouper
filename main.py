@@ -117,7 +117,7 @@ class PatchTS(Resource):
             return json.dumps(toReturn)
         for a in patchIds:
             abort_if_patch_doesnt_exist(a)
-            timeSeriesD = currData.slctData[currData.ptchnm2idx[a]].trimZeros()
+            timeSeriesD = currData.tsData[currData.ptchnm2idx[a]].trimZeros()
             entry = {str(a) : timeSeriesD}
             toReturn.append(entry)
         jsonToRet = json.dumps(toReturn)
