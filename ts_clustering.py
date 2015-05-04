@@ -142,7 +142,7 @@ class TSCluster:
                 #print ts.ptchNm, row[0]
                 ts.setAppNm(row[1])
                 ts.setUpM(row[2])
-                ts.setExpF(bool(row[6]))
+                ts.setExpF(row[6] in ['TRUE','True','true'])
             print 'patch time series with attribute:', ri
 
     def loadFtr(self, ftrFile):
@@ -182,7 +182,6 @@ class TSCluster:
         if not 'all' in self.slctUM:
             self.slctData = [ts for ts in self.slctData if ts.upM in self.slctUM]
         if not 'all' in self.slctExpF:
-            # print self.slctExpF
             self.slctData = [ts for ts in self.slctData if ts.expFlag in self.slctExpF]
         print 'selected data:', len(self.slctData)
 
