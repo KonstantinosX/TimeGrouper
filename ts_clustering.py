@@ -184,6 +184,7 @@ class TSCluster:
         if not 'all' in self.slctExpF:
             self.slctData = [ts for ts in self.slctData if ts.expFlag in self.slctExpF]
         print 'selected data:', len(self.slctData)
+        self.slctExpF = {'all'}
 
     def getSimMat(self, type = 'euclidean', ftr_type = 'data', orderFlag = True, pca_dim=20):
         if ftr_type == 'ftr':
