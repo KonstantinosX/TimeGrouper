@@ -416,3 +416,24 @@ class TSCluster:
     def printAllAppNm(self):
         for i in xrange(self.tsNum):
             print self.tsData[i].appNm
+            
+    def getStatstics(self):
+        print 'total time series: ', len(self.tsData)
+        appList = [ts.appNm for ts in self.tsData]
+        upList = [ts.upM for ts in self.tsData]
+        expList = [ts.expFlag for ts in self.tsData] 
+        appSet = set(appList)
+        upSet = set(upList)
+        expSet = set(expList)
+        print appSet
+        print upSet
+        print expSet
+        for app in appSet:
+            tmp = [ts for ts in self.tsData if ts.appNm == app]
+            print app, ':', len(tmp)
+        for up in upSet:
+            tmp = [ts for ts in self.tsData if ts.upM == up]
+            print up, ':', len(tmp)
+        for exp in expSet:
+            tmp = [ts for ts in self.tsData if ts.expFlag == exp]
+            print exp, ':', len(tmp)

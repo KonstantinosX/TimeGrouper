@@ -16,13 +16,13 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     # test demo
-    fileFolder = os.path.dirname(os.path.abspath('__file__'))+'/data'
-    # fileFolder = r'D:\UMD\class\2015Spring\cmsc734\termProject'
+    #fileFolder = os.path.dirname(os.path.abspath('__file__'))+'/data'
+    fileFolder = r'D:\UMD\class\2015Spring\cmsc734\termProject'
     tsc = TSCluster()
     tsc.loadTS(fileFolder+'/hazard_alg_TP.input')
     tsc.loadAttr(fileFolder+'/stat.csv')
     tsc.loadFtr(fileFolder+'/ziyun_ftr.input')
-
+    tsc.getStatstics()
     #test for similarity matrix
     '''
     tsc.setAppFilter(['chrome', 'firefox'])
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
 
 
-    tsc.setAppFilter(['firefox'])
+    #tsc.setAppFilter(['firefox'])
 
     '''
     #use input feature: Ziyun's feature
@@ -92,6 +92,7 @@ if __name__ == '__main__':
     tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = True)
     tsc.drawSimMat()
     '''
+    '''
     #test clustering
     tsc.slctTSData()
     # tsc.getSimMat(type='ica_cos', ftr_type = 'data', orderFlag = False)
@@ -107,3 +108,4 @@ if __name__ == '__main__':
     #save matrix
     #tsc.writeSimMatCSV(fileFolder+'\PatchName.csv', fileFolder+'\SimMat.csv')
     plt.show()
+'''
